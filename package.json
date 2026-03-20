@@ -1,0 +1,32 @@
+{
+  "name": "avs-generator",
+  "version": "1.0.0",
+  "description": "After Visit Summary PDF Generator for Weight Management",
+  "main": "main.js",
+  "author": "Geffrey H. Klein, MD",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --arm64"
+  },
+  "build": {
+    "appId": "com.wscl.avs-generator",
+    "productName": "AVS Generator",
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.medical",
+      "icon": "icon.icns"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "generator.js",
+      "avs_template.html"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}
