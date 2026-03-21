@@ -3,7 +3,12 @@
 const QR_API_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://g.page/r/CR1ccgPImkkOEBE/review';
 
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ── Parse measurements ──
@@ -11,34 +16,40 @@ function parseMeasurements(text) {
   const rows = [];
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
-    if (!trimmed || !trimmed.includes('Date:')) continue;
+    if (!trimmed || !/^\s*date:\s/i.test(trimmed)) continue;
     const parts = {};
     for (const p of trimmed.split('|')) {
       const idx = p.indexOf(':');
       if (idx > -1) {
-        parts[p.slice(0, idx).trim()] = p.slice(idx + 1).trim();
+        const key = p.slice(0, idx).trim().toLowerCase();
+        parts[key] = p.slice(idx + 1).trim();
       }
     }
     rows.push({
-      date:   parts.Date || '',
-      weight: (parts.Weight || '').replace(/ lbs/i, ''),
-      waist:  (parts.Waist || '').replace(/ in/i, ''),
-      neck:   (parts.Neck || '').replace(/ in/i, ''),
-      hip:    (parts.Hip || '').replace(/ in/i, ''),
-      bmi:    parts.BMI || '',
+      date: parts.date || '',
+      weight: (parts.weight || '').replace(/ lbs/i, ''),
+      waist: (parts.waist || '').replace(/ in/i, ''),
+      neck: (parts.neck || '').replace(/ in/i, ''),
+      hip: (parts.hip || '').replace(/ in/i, ''),
+      bmi: parts.bmi || '',
     });
   }
   return rows;
 }
 
 // ── Split raw text into letter + measurement lines ──
+/** Require pipe-delimited row so prose lines like "Date: your visit" do not flip modes. */
+function isMeasurementBlockLine(line) {
+  return /^\s*date:\s/i.test(line) && line.includes('|');
+}
+
 function splitInput(raw) {
   const lines = raw.split('\n');
   const letterLines = [];
   const measLines = [];
   let inMeas = false;
   for (const line of lines) {
-    if (/^\s*Date:\s/.test(line)) inMeas = true;
+    if (isMeasurementBlockLine(line)) inMeas = true;
     if (inMeas) measLines.push(line);
     else letterLines.push(line);
   }
@@ -90,7 +101,7 @@ function extractStats(letter, measurements) {
   }
   if (!stats.pct_lost && stats.lbs_lost && stats.start_weight) {
     const pct = (parseFloat(stats.lbs_lost) / parseFloat(stats.start_weight)) * 100;
-    if (!isNaN(pct)) stats.pct_lost = pct.toFixed(1);
+    if (!isNaN(pct)) stats.pct_lost = pct.toFixed(1); // % of starting weight (gain shows negative)
   }
 
   return stats;
@@ -189,8 +200,12 @@ function buildSvgChart(measurements, goalWeight) {
   const dates = measurements.map(r => r.date);
   const goal = parseFloat(goalWeight) || (Math.min(...weights) - 5);
   const allVals = [...weights, goal];
-  const minW = Math.min(...allVals) - 5;
-  const maxW = Math.max(...allVals) + 5;
+  let minW = Math.min(...allVals) - 5;
+  let maxW = Math.max(...allVals) + 5;
+  if (maxW - minW < 1) {
+    minW -= 2;
+    maxW += 2;
+  }
 
   const VW = 460, VH = 165, PL = 50, PR = 20, PT = 10, PB = 20;
   const CW = VW - PL - PR, CH = VH - PT - PB;
@@ -265,24 +280,38 @@ function buildMeasurementsNote(stats) {
   const parts = [];
   if (stats.start_waist && stats.current_waist) {
     const d = parseFloat(stats.start_waist) - parseFloat(stats.current_waist);
-    if (!isNaN(d)) parts.push(`<strong>📏 Waist:</strong> ${stats.start_waist}" → ${stats.current_waist}" (${d >= 0 ? '-' : '+'}${Math.abs(d).toFixed(2)}")<br>`);
+    if (!isNaN(d)) parts.push(`<strong>📏 Waist:</strong> ${stats.start_waist}" → ${stats.current_waist}" (+${Math.abs(d).toFixed(2)}")<br>`);
   }
   if (stats.start_hip && stats.current_hip) {
     const d = parseFloat(stats.start_hip) - parseFloat(stats.current_hip);
-    if (!isNaN(d)) parts.push(`<strong>📏 Hips:</strong> ${stats.start_hip}" → ${stats.current_hip}" (${d >= 0 ? '-' : '+'}${Math.abs(d).toFixed(2)}")`);
+    if (!isNaN(d)) parts.push(`<strong>📏 Hips:</strong> ${stats.start_hip}" → ${stats.current_hip}" (+${Math.abs(d).toFixed(2)}")`);
   }
   return parts.length ? parts.join('\n') : 'Body composition changes tracked above.';
 }
 
 // ── Hero band ──
 function buildHero(stats) {
-  const pct = parseFloat(stats.pct_lost || '0') || 0;
+  const lbsNum = stats.lbs_lost !== '' ? parseFloat(stats.lbs_lost) : NaN;
+  const pctNum = stats.pct_lost !== '' ? parseFloat(stats.pct_lost) : NaN;
+  const hasLbs = !isNaN(lbsNum);
+  const hasPct = !isNaN(pctNum);
+
+  if (hasLbs && lbsNum < 0) {
+    const gained = Math.abs(lbsNum).toFixed(1);
+    const subParts = [`+${gained} lbs vs starting weight`];
+    if (hasPct && pctNum < 0) subParts.push(`${Math.abs(pctNum).toFixed(1)}% of starting weight`);
+    return { emoji: '💙', title: "We're Here to Support You", sub: subParts.join(' · ') };
+  }
+
+  const pct = hasPct ? pctNum : 0;
   const lbs = stats.lbs_lost || '?';
   const pctStr = stats.pct_lost || '?';
 
   let progressStr = '';
   if (stats.start_weight && stats.current_weight && stats.goal_weight) {
-    const sw = parseFloat(stats.start_weight), cw = parseFloat(stats.current_weight), gw = parseFloat(stats.goal_weight);
+    const sw = parseFloat(stats.start_weight);
+    const cw = parseFloat(stats.current_weight);
+    const gw = parseFloat(stats.goal_weight);
     const totalToLose = sw - gw;
     if (totalToLose > 0) {
       const pctToGoal = ((sw - cw) / totalToLose) * 100;
@@ -290,7 +319,7 @@ function buildHero(stats) {
     }
   }
 
-  const sub = `${lbs} lbs lost · ${pctStr}% of body weight${progressStr}`;
+  const sub = `${lbs} lbs lost · ${pctStr}% of starting weight${progressStr}`;
   if (pct >= 15) return { emoji: '🏆', title: 'Outstanding Achievement! 🏆', sub };
   if (pct >= 10) return { emoji: '💪', title: 'Excellent Progress! 💪', sub };
   return { emoji: '🌟', title: 'Great Work! Keep Going! 🌟', sub };
@@ -304,8 +333,11 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
   const sections = parseLetterSections(letter);
   const hero = buildHero(stats);
 
-  const preamble = sections.preamble.filter(l => l.trim()).join(' ');
-  const achievementText = preamble || `Today's visit summary for ${patientName}.`;
+  const achievementText =
+    sections.preamble
+      .filter(l => l.trim())
+      .map(l => esc(l.trim()))
+      .join('<br>') || esc(`Today's visit summary for ${patientName}.`);
 
   const smartNutrition = renderGoalItems(sections.nutrition_smart || [])
     || "<div class='goal-item'><span class='goal-icon'>ℹ️</span><div>See your provider for nutrition goals.</div></div>";
@@ -335,16 +367,15 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
   const measNote = buildMeasurementsNote(stats);
 
   const replacements = {
-    '{{PATIENT_NAME}}': patientName,
     '{{HERO_EMOJI}}': hero.emoji,
     '{{HERO_TITLE}}': hero.title,
     '{{HERO_SUB}}': hero.sub,
-    '{{START_WEIGHT}}': stats.start_weight || '—',
-    '{{CURRENT_WEIGHT}}': stats.current_weight || '—',
-    '{{LBS_LOST}}': stats.lbs_lost || '—',
-    '{{PCT_LOST}}': stats.pct_lost || '—',
-    '{{GOAL_WEIGHT}}': stats.goal_weight || '—',
-    '{{VISIT_DATE}}': visitDate,
+    '{{START_WEIGHT}}': esc(stats.start_weight || '—'),
+    '{{CURRENT_WEIGHT}}': esc(stats.current_weight || '—'),
+    '{{LBS_LOST}}': esc(stats.lbs_lost || '—'),
+    '{{PCT_LOST}}': esc(stats.pct_lost || '—'),
+    '{{GOAL_WEIGHT}}': esc(stats.goal_weight || '—'),
+    '{{VISIT_DATE}}': esc(visitDate),
     '{{ACHIEVEMENT_TEXT}}': achievementText,
     '{{WEIGHT_CHART_SVG}}': svg,
     '{{MEASUREMENTS_TABLE}}': table,

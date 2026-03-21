@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>After Visit Summary – Weight Management</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>After Visit Summary - Weight Management</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,547 +12,634 @@
     margin: 0;
   }
 
+  :root {
+    --green: #0f9b78;
+    --green-dark: #0b7f63;
+    --green-soft: #eaf8f1;
+    --green-border: #8fe0c2;
+    --blue: #2f6fe4;
+    --blue-soft: #eef5ff;
+    --blue-border: #a8c8ff;
+    --amber: #d69012;
+    --amber-soft: #fff7e3;
+    --amber-border: #f4d48a;
+    --purple: #8f63d2;
+    --purple-soft: #f5efff;
+    --purple-border: #d5c2f9;
+    --text: #36526c;
+    --muted: #7d93a8;
+    --grid: #e8eef4;
+  }
+
   body {
-    font-family: 'Inter', sans-serif;
-    font-size: 7.5pt;
-    background: #fff;
-    color: #1a1a1a;
     width: 8.5in;
     min-height: 11in;
     max-height: 11in;
     overflow: hidden;
-    padding: 0.22in 0.28in 0.15in 0.28in;
+    padding: 0.18in 0.18in 0.14in;
+    background: #fff;
+    color: var(--text);
+    font-family: "Arial", "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 7pt;
+    line-height: 1.28;
   }
 
-  /* ─── HEADER ─── */
+  .page {
+    min-height: 10.68in;
+    display: flex;
+    flex-direction: column;
+  }
+
   .header {
     text-align: center;
-    padding-bottom: 5px;
-    border-bottom: 2px solid #059669;
-    margin-bottom: 6px;
-  }
-  .header .practice-name {
-    font-size: 11pt;
-    font-weight: 800;
-    color: #047857;
-    letter-spacing: 0.3px;
-  }
-  .header .provider {
-    font-size: 7.5pt;
-    color: #6b7280;
-    margin-top: 1px;
-  }
-  .header .doc-title {
-    font-size: 7pt;
-    color: #9ca3af;
-    margin-top: 1px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--green);
   }
 
-  /* ─── HERO BAND ─── */
+  .practice-name {
+    color: var(--green-dark);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  .provider {
+    margin-top: 2px;
+    color: #7b8ea0;
+    font-size: 8px;
+    line-height: 1.1;
+  }
+
+  .doc-title {
+    margin-top: 1px;
+    color: #8899a8;
+    font-size: 8px;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+
   .hero-band {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    margin-top: 4px;
+    background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%);
     border-radius: 8px;
-    padding: 8px 16px;
+    padding: 8px 12px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 7px;
+    align-items: center;
     color: #fff;
   }
+
   .hero-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    min-width: 0;
   }
+
   .hero-emoji {
-    font-size: 22pt;
+    font-size: 19px;
     line-height: 1;
   }
-  .hero-text .hero-title {
-    font-size: 13pt;
-    font-weight: 800;
-    line-height: 1.1;
+
+  .hero-title {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.05;
   }
-  .hero-text .hero-sub {
-    font-size: 8.5pt;
-    font-weight: 500;
-    opacity: 0.92;
+
+  .hero-sub {
     margin-top: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.1;
+    opacity: 0.94;
   }
+
   .hero-right {
     text-align: right;
-    font-size: 7pt;
-    opacity: 0.85;
-    line-height: 1.6;
-  }
-  .hero-right strong {
-    display: block;
-    font-size: 8pt;
-    opacity: 1;
+    font-size: 8px;
+    line-height: 1.4;
+    font-weight: 700;
+    padding-left: 8px;
   }
 
-  /* ─── STAT BOXES ─── */
-  .stats-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 7px;
-  }
-  .stat-box {
-    flex: 1;
-    border-radius: 7px;
-    padding: 6px 10px;
-    text-align: center;
-  }
-  .stat-box .stat-label {
-    font-size: 6.5pt;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    opacity: 0.7;
+  .hero-right .goal {
+    display: block;
     margin-bottom: 2px;
   }
-  .stat-box .stat-value {
-    font-size: 14pt;
-    font-weight: 800;
-    line-height: 1;
-  }
-  .stat-box .stat-sub {
-    font-size: 6.5pt;
-    opacity: 0.7;
-    margin-top: 1px;
-  }
-  .stat-start  { background: #eff6ff; color: #1e40af; }
-  .stat-today  { background: #f0fdf4; color: #166534; }
-  .stat-lost   { background: #ecfdf5; color: #065f46; border: 2px solid #059669; }
 
-  /* Arrow between boxes */
-  .stat-arrow {
-    display: flex;
-    align-items: center;
-    font-size: 14pt;
-    color: #059669;
-    font-weight: 700;
-    flex: 0 0 auto;
-    padding: 0 1px;
-  }
-
-  /* ─── MAIN 2-COL LAYOUT ─── */
-  .main-grid {
+  .stats-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 18px 1fr 18px 1fr;
     gap: 6px;
-    margin-bottom: 7px;
+    margin-top: 6px;
+    align-items: center;
   }
 
-  /* ─── CARDS ─── */
-  .card {
+  .stat-box {
+    min-height: 48px;
     border-radius: 7px;
-    padding: 7px 9px;
+    padding: 5px 8px 4px;
+    text-align: center;
     border: 1px solid transparent;
   }
-  .card-title {
-    font-size: 7.5pt;
+
+  .stat-start {
+    background: #eef4fb;
+    color: #3459c0;
+  }
+
+  .stat-today {
+    background: #edf9f1;
+    color: #1f915a;
+  }
+
+  .stat-lost {
+    background: #f5faf7;
+    color: var(--green-dark);
+    border: 2px solid var(--green);
+  }
+
+  .stat-label {
+    color: #7d90a6;
+    font-size: 7px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 4px;
+    letter-spacing: 0.45px;
+    margin-bottom: 2px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-sub {
+    margin-top: 1px;
+    font-size: 6px;
+    color: #88a0b1;
+    font-weight: 700;
+  }
+
+  .stat-arrow {
+    text-align: center;
+    color: var(--green);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .info-box {
+    margin-top: 6px;
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 6px 6px 0;
+    padding: 5px 8px;
+    color: #466986;
+    font-size: 8px;
+    line-height: 1.33;
+    font-style: italic;
+  }
+
+  .mid-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.9fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .chart-panel {
+    border: 1px solid #dfe6ed;
+    border-radius: 7px;
+    padding: 5px 6px 4px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  }
+
+  .chart-title {
     display: flex;
     align-items: center;
     gap: 4px;
+    color: #46617a;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
   }
-  .card-title .dot {
+
+  .chart-title .accent {
+    color: var(--green);
+  }
+
+  .chart-goal {
+    margin-left: auto;
+    color: #9baab8;
+    font-size: 6px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .table-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #884dcb;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .table-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    flex-shrink: 0;
+    background: var(--purple);
+    flex: 0 0 auto;
   }
 
-  /* Green card */
-  .card-green { background: #f0fdf4; border-color: #86efac; }
-  .card-green .card-title { color: #166534; }
-  .card-green .dot { background: #059669; }
-
-  /* Blue card */
-  .card-blue { background: #eff6ff; border-color: #93c5fd; }
-  .card-blue .card-title { color: #1e40af; }
-  .card-blue .dot { background: #3b82f6; }
-
-  /* Amber card */
-  .card-amber { background: #fffbeb; border-color: #fcd34d; }
-  .card-amber .card-title { color: #92400e; }
-  .card-amber .dot { background: #f59e0b; }
-
-  /* Purple card */
-  .card-purple { background: #faf5ff; border-color: #c4b5fd; }
-  .card-purple .card-title { color: #6b21a8; }
-  .card-purple .dot { background: #9333ea; }
-
-  /* ─── CHART ─── */
-  .chart-section {
-    margin-bottom: 7px;
-  }
-  .chart-wrap {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    padding: 6px 8px 4px 8px;
-  }
-  .chart-title {
-    font-size: 7pt;
-    font-weight: 700;
-    color: #374151;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    margin-bottom: 3px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  /* ─── TABLE ─── */
-  .table-section {
-    margin-bottom: 7px;
-  }
   .table-wrap {
-    border-radius: 7px;
+    border: 1px solid #e1e7ee;
+    border-radius: 6px;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
   }
+
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 7pt;
+    font-size: 6.6pt;
   }
+
   th {
-    background: #f3f4f6;
-    color: #6b7280;
-    font-weight: 600;
+    background: #f5f7fa;
+    color: #7d90a6;
+    font-size: 6px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    padding: 4px 8px;
     text-align: center;
-    font-size: 6.5pt;
+    padding: 4px 5px;
   }
+
   td {
-    padding: 3.5px 8px;
     text-align: center;
-    border-top: 1px solid #f3f4f6;
-    font-size: 7pt;
-  }
-  tr.highlight td {
-    background: #ecfdf5;
+    padding: 4px 5px;
+    border-top: 1px solid #edf1f5;
+    color: #4a677f;
     font-weight: 700;
-    color: #065f46;
-    border-top: 1.5px solid #059669;
-    border-bottom: 1.5px solid #059669;
-  }
-  tr.highlight td:first-child { border-left: 3px solid #059669; }
-
-  /* ─── SMART GOALS ─── */
-  .goal-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 5px;
-    margin-bottom: 3px;
-    font-size: 7pt;
-    line-height: 1.35;
-  }
-  .goal-icon {
-    font-size: 8pt;
-    flex-shrink: 0;
-    margin-top: 0px;
-  }
-  .goal-text strong {
-    font-weight: 600;
   }
 
-  /* ─── MED BOX ─── */
-  .med-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-    font-size: 7pt;
-    margin-bottom: 2.5px;
+  tr.highlight td {
+    background: #ebfaf2;
+    color: var(--green-dark);
+    border-top: 2px solid var(--green);
+    border-bottom: 2px solid var(--green);
+  }
+
+  tr.highlight td:first-child {
+    border-left: 2px solid var(--green);
+  }
+
+  .measurements-note {
+    margin-top: 4px;
+    background: var(--purple-soft);
+    border: 1px solid var(--purple-border);
+    border-radius: 6px;
+    padding: 5px 7px;
+    color: #8755c8;
+    font-size: 6.6pt;
+    font-weight: 700;
     line-height: 1.3;
   }
-  .med-icon { flex-shrink: 0; }
 
-  .warn-row {
-    background: #fef3c7;
-    border-left: 3px solid #f59e0b;
-    border-radius: 4px;
-    padding: 3px 6px;
-    font-size: 6.5pt;
-    color: #78350f;
-    margin-top: 4px;
+  .lower-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
   }
 
-  /* ─── NEXT STEPS ─── */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .card {
+    border-radius: 7px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    background: #fff;
+  }
+
+  .card-green {
+    background: var(--green-soft);
+    border-color: var(--green-border);
+  }
+
+  .card-blue {
+    background: var(--blue-soft);
+    border-color: var(--blue-border);
+  }
+
+  .card-amber {
+    background: var(--amber-soft);
+    border-color: var(--amber-border);
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .card-green .card-title { color: #267f59; }
+  .card-blue .card-title { color: #2d69d2; }
+  .card-amber .card-title { color: #be7a07; }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .card-green .dot { background: var(--green); }
+  .card-blue .dot { background: var(--blue); }
+  .card-amber .dot { background: var(--amber); }
+
+  .subheading {
+    font-size: 6.6pt;
+    font-weight: 700;
+    margin: 3px 0 2px;
+  }
+
+  .card-green .subheading { color: #2e9d64; }
+
+  .goal-item,
+  .med-item,
   .step-item {
     display: flex;
     align-items: flex-start;
     gap: 4px;
-    font-size: 7pt;
-    margin-bottom: 3px;
-    line-height: 1.3;
-  }
-  .step-num {
-    background: #3b82f6;
-    color: #fff;
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    font-size: 6.5pt;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 0px;
+    font-size: 6.6pt;
+    line-height: 1.32;
+    color: #4a667d;
+    margin-bottom: 2px;
   }
 
-  /* ─── FITTE + NUTRITION ROW ─── */
+  .goal-icon,
+  .med-icon {
+    flex: 0 0 auto;
+    line-height: 1;
+  }
+
+  .goal-text strong {
+    font-weight: 700;
+  }
+
+  .warn-row {
+    margin-top: 3px;
+    background: #fff0c8;
+    border-left: 3px solid var(--amber);
+    border-radius: 4px;
+    padding: 3px 6px;
+    color: #8b5a0a;
+    font-size: 6.2pt;
+    font-weight: 700;
+  }
+
+  .step-num {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    background: var(--blue);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6px;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+
   .bottom-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 90px;
+    grid-template-columns: 1fr 1fr 70px;
     gap: 6px;
-    margin-bottom: 6px;
-    align-items: start;
+    margin-top: 6px;
+    align-items: stretch;
   }
 
   .fitte-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 6.8pt;
+    font-size: 6.5pt;
   }
+
   .fitte-table td {
-    padding: 2.5px 5px;
     border: none;
+    border-top: 1px solid rgba(47, 111, 228, 0.08);
+    padding: 2px 4px;
     text-align: left;
+    vertical-align: top;
   }
+
+  .fitte-table tr:first-child td {
+    border-top: none;
+  }
+
   .fitte-table td:first-child {
+    width: 62px;
+    color: #3568cf;
     font-weight: 700;
-    color: #1d4ed8;
-    width: 75px;
   }
-  .fitte-table tr:nth-child(even) td { background: #f0f9ff; }
-  .fitte-table tr:nth-child(odd) td { background: #fff; }
 
   .nutr-list {
     list-style: none;
-    padding: 0;
-    font-size: 6.8pt;
-    line-height: 1.45;
-  }
-  .nutr-list li {
-    display: flex;
-    gap: 3px;
-    margin-bottom: 1.5px;
-    align-items: flex-start;
-  }
-  .nutr-list li::before {
-    content: "•";
-    color: #059669;
-    flex-shrink: 0;
-    margin-top: 0px;
+    font-size: 6.5pt;
+    line-height: 1.3;
+    color: #4a667d;
   }
 
-  /* ─── QR SECTION ─── */
+  .nutr-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 3px;
+    margin-bottom: 1px;
+  }
+
+  .nutr-list li::before {
+    content: "•";
+    color: var(--green);
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+
   .qr-box {
-    background: #fff;
-    border: 1.5px solid #d1fae5;
+    border: 1px solid #e0e7ee;
     border-radius: 7px;
-    padding: 6px;
-    text-align: center;
+    padding: 5px 4px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-  }
-  .qr-box img {
-    width: 70px;
-    height: 70px;
-    border-radius: 4px;
-  }
-  .qr-caption {
-    font-size: 6pt;
-    color: #065f46;
-    font-weight: 600;
-    line-height: 1.3;
-  }
-
-  /* ─── INFO BOX ─── */
-  .info-box {
-    background: #eff6ff;
-    border-left: 3px solid #3b82f6;
-    border-radius: 0 5px 5px 0;
-    padding: 4px 8px;
-    font-size: 7pt;
-    color: #1e3a8a;
-    margin-bottom: 6px;
-    font-style: italic;
-    line-height: 1.4;
-  }
-
-  /* ─── FOOTER ─── */
-  .footer {
-    border-top: 1.5px solid #d1fae5;
-    padding-top: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 6.5pt;
-    color: #9ca3af;
-  }
-  .footer .footer-center {
     text-align: center;
-    flex: 1;
-  }
-  .footer .footer-left, .footer .footer-right {
-    font-size: 6pt;
+    background: #fff;
   }
 
-  /* Section full-width */
-  .full-width { grid-column: 1 / -1; }
+  .qr-box img {
+    width: 48px;
+    height: 48px;
+    display: block;
+  }
+
+  .qr-caption {
+    margin-top: 2px;
+    color: #6b8297;
+    font-size: 6px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .footer {
+    margin-top: auto;
+    padding-top: 5px;
+    color: #98a8b8;
+    font-size: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .footer-center {
+    flex: 1;
+    text-align: center;
+  }
+
+  .footer-left,
+  .footer-right {
+    flex: 0 0 auto;
+  }
 </style>
 </head>
 <body>
+  <div class="page">
+    <div class="header">
+      <div class="practice-name">Women's Specialists of Clear Lake</div>
+      <div class="provider">Geffrey H. Klein, MD · FACOG · DABOM | Weight Management Program</div>
+      <div class="doc-title">After Visit Summary · {{VISIT_DATE}}</div>
+    </div>
 
-  <!-- ══════════════════ HEADER ══════════════════ -->
-  <div class="header">
-    <div class="practice-name">Women's Specialists of Clear Lake</div>
-    <div class="provider">Geffrey H. Klein, MD · FACOG · DABOM &nbsp;|&nbsp; Weight Management Program</div>
-    <div class="doc-title">After Visit Summary · {{VISIT_DATE}}</div>
-  </div>
-
-  <!-- ══════════════════ HERO BAND ══════════════════ -->
-  <div class="hero-band">
-    <div class="hero-left">
-      <div class="hero-emoji">{{HERO_EMOJI}}</div>
-      <div class="hero-text">
-        <div class="hero-title">{{HERO_TITLE}}</div>
-        <div class="hero-sub">{{HERO_SUB}}</div>
+    <div class="hero-band">
+      <div class="hero-left">
+        <div class="hero-emoji">{{HERO_EMOJI}}</div>
+        <div>
+          <div class="hero-title">{{HERO_TITLE}}</div>
+          <div class="hero-sub">{{HERO_SUB}}</div>
+        </div>
       </div>
-    </div>
-    <div class="hero-right">
-      <strong>Goal Weight: {{GOAL_WEIGHT}} lbs</strong>
-      Current: {{CURRENT_WEIGHT}} lbs<br>
-      Visit Date: {{VISIT_DATE}}
-    </div>
-  </div>
-
-  <!-- ══════════════════ STAT BOXES ══════════════════ -->
-  <div class="stats-row">
-    <div class="stat-box stat-start">
-      <div class="stat-label">Starting Weight</div>
-      <div class="stat-value">{{START_WEIGHT}}</div>
-      <div class="stat-sub">lbs</div>
-    </div>
-    <div class="stat-arrow">→</div>
-    <div class="stat-box stat-today">
-      <div class="stat-label">Today's Weight</div>
-      <div class="stat-value">{{CURRENT_WEIGHT}}</div>
-      <div class="stat-sub">lbs</div>
-    </div>
-    <div class="stat-arrow">→</div>
-    <div class="stat-box stat-lost">
-      <div class="stat-label">🎉 Total Lost</div>
-      <div class="stat-value">{{LBS_LOST}}</div>
-      <div class="stat-sub">lbs &nbsp;·&nbsp; {{PCT_LOST}}% body weight</div>
-    </div>
-  </div>
-
-  <!-- ══════════════════ INFO QUOTE ══════════════════ -->
-  <div class="info-box">
-    {{ACHIEVEMENT_TEXT}}
-  </div>
-
-  <!-- ══════════════════ CHART + TABLE SIDE BY SIDE ══════════════════ -->
-  <div style="display:grid; grid-template-columns: 1.35fr 1fr; gap:6px; margin-bottom:7px;">
-
-    <!-- WEIGHT CHART -->
-    <div class="chart-wrap">
-      <div class="chart-title">
-        <span style="color:#059669;">▶</span> Weight Progress Chart
-        <span style="margin-left:auto; font-size:6pt; color:#9ca3af; text-transform:none; font-weight:400;">— — Goal ({{GOAL_WEIGHT}} lbs)</span>
-      </div>
-      {{WEIGHT_CHART_SVG}}
-    </div>
-
-    <!-- MEASUREMENTS TABLE -->
-    <div style="display:flex; flex-direction:column; gap:0;">
-      <div style="font-size:7pt; font-weight:700; color:#6b21a8; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
-        <span style="width:8px;height:8px;border-radius:50%;background:#9333ea;display:inline-block;"></span>
-        Measurements History
-      </div>
-      <div class="table-wrap">
-        {{MEASUREMENTS_TABLE}}
-      </div>
-      <!-- Waist/hip note -->
-      <div style="background:#faf5ff; border:1px solid #c4b5fd; border-radius:5px; padding:4px 7px; margin-top:4px; font-size:6.5pt; color:#6b21a8;">
-        {{MEASUREMENTS_NOTE}}
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════ SMART GOALS + MEDICATION ══════════════════ -->
-  <div class="main-grid" style="margin-bottom:6px;">
-
-    <!-- SMART GOALS -->
-    <div class="card card-green">
-      <div class="card-title"><span class="dot"></span>SMART Goals – Next 4 Weeks</div>
-      <div style="font-size:6.8pt; font-weight:600; color:#166534; margin-bottom:3px;">🥗 Nutrition</div>
-      {{SMART_NUTRITION}}
-      <div style="font-size:6.8pt; font-weight:600; color:#166534; margin:4px 0 3px;">💪 Exercise</div>
-      {{SMART_EXERCISE}}
-    </div>
-
-    <!-- MEDICATION + NEXT STEPS -->
-    <div style="display:flex; flex-direction:column; gap:5px;">
-      <div class="card card-amber">
-        <div class="card-title"><span class="dot"></span>Medication</div>
-        {{MEDICATION}}
-      </div>
-      <div class="card card-blue">
-        <div class="card-title"><span class="dot"></span>Next Steps</div>
-        {{NEXT_STEPS}}
+      <div class="hero-right">
+        <span class="goal">Goal Weight: {{GOAL_WEIGHT}} lbs</span>
+        Current: {{CURRENT_WEIGHT}} lbs<br>
+        Visit Date: {{VISIT_DATE}}
       </div>
     </div>
 
-  </div>
-
-  <!-- ══════════════════ FITTE + NUTRITION + QR ══════════════════ -->
-  <div class="bottom-row">
-
-    <!-- FITTE Exercise -->
-    <div class="card card-blue" style="padding:6px 8px;">
-      <div class="card-title"><span class="dot"></span>FITTE Exercise Prescription</div>
-      {{FITTE_TABLE}}
+    <div class="stats-row">
+      <div class="stat-box stat-start">
+        <div class="stat-label">Starting Weight</div>
+        <div class="stat-value">{{START_WEIGHT}}</div>
+        <div class="stat-sub">lbs</div>
+      </div>
+      <div class="stat-arrow">→</div>
+      <div class="stat-box stat-today">
+        <div class="stat-label">Today's Weight</div>
+        <div class="stat-value">{{CURRENT_WEIGHT}}</div>
+        <div class="stat-sub">lbs</div>
+      </div>
+      <div class="stat-arrow">→</div>
+      <div class="stat-box stat-lost">
+        <div class="stat-label">🎉 Total Lost</div>
+        <div class="stat-value">{{LBS_LOST}}</div>
+        <div class="stat-sub">lbs · {{PCT_LOST}}% body weight</div>
+      </div>
     </div>
 
-    <!-- Nutrition -->
-    <div class="card card-green" style="padding:6px 8px;">
-      <div class="card-title"><span class="dot"></span>Nutrition Guidelines</div>
-      {{NUTRITION_GUIDELINES}}
+    <div class="info-box">{{ACHIEVEMENT_TEXT}}</div>
+
+    <div class="mid-grid">
+      <div class="chart-panel">
+        <div class="chart-title">
+          <span class="accent">▶</span> Weight Progress Chart
+          <span class="chart-goal">- - Goal ({{GOAL_WEIGHT}} lbs)</span>
+        </div>
+        {{WEIGHT_CHART_SVG}}
+      </div>
+
+      <div>
+        <div class="table-title">
+          <span class="table-dot"></span>
+          Measurements History
+        </div>
+        <div class="table-wrap">{{MEASUREMENTS_TABLE}}</div>
+        <div class="measurements-note">{{MEASUREMENTS_NOTE}}</div>
+      </div>
     </div>
 
-    <!-- QR Code -->
-    <div class="qr-box">
-      <img src="{{QR_API_URL}}" alt="Google Review QR Code"/>
-      <div class="qr-caption">Leave us a Google Review!<br>⭐⭐⭐⭐⭐</div>
+    <div class="lower-grid">
+      <div class="card card-green">
+        <div class="card-title"><span class="dot"></span>SMART Goals - Next 4 Weeks</div>
+        <div class="subheading">🥗 Nutrition</div>
+        {{SMART_NUTRITION}}
+        <div class="subheading">💪 Exercise</div>
+        {{SMART_EXERCISE}}
+      </div>
+
+      <div class="stack">
+        <div class="card card-amber">
+          <div class="card-title"><span class="dot"></span>Medication</div>
+          {{MEDICATION}}
+        </div>
+        <div class="card card-blue">
+          <div class="card-title"><span class="dot"></span>Next Steps</div>
+          {{NEXT_STEPS}}
+        </div>
+      </div>
     </div>
 
-  </div>
+    <div class="bottom-row">
+      <div class="card card-blue" style="padding: 5px 7px;">
+        <div class="card-title"><span class="dot"></span>FITTE Exercise Prescription</div>
+        {{FITTE_TABLE}}
+      </div>
 
-  <!-- ══════════════════ FOOTER ══════════════════ -->
-  <div class="footer">
-    <div class="footer-left">{{VISIT_DATE}} &nbsp;|&nbsp; Weight Management Program</div>
-    <div class="footer-center">© 2026 Women's Specialists of Clear Lake · Weight Management Program · Geffrey H. Klein, MD, FACOG, DABOM</div>
-    <div class="footer-right">Confidential Patient Document</div>
-  </div>
+      <div class="card card-green" style="padding: 5px 7px;">
+        <div class="card-title"><span class="dot"></span>Nutrition Guidelines</div>
+        {{NUTRITION_GUIDELINES}}
+      </div>
 
+      <div class="qr-box">
+        <img src="{{QR_API_URL}}" alt="Google Review QR Code">
+        <div class="qr-caption">Leave us a Google<br>Review!<br>⭐⭐⭐⭐⭐</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">{{VISIT_DATE}} | Weight Management Program</div>
+      <div class="footer-center">© 2026 Women's Specialists of Clear Lake · Weight Management Program · Geffrey H. Klein, MD, FACOG, DABOM</div>
+      <div class="footer-right">Confidential Patient Document</div>
+    </div>
+  </div>
 </body>
 </html>
