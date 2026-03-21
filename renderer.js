@@ -1,12 +1,12 @@
 // ── Renderer: UI event handling ──
 
-const TEMPLATE_HTML = `TEMPLATE_PLACEHOLDER`;
-
-// Load the template via fetch (it's bundled as a file)
 let templateCache = null;
 async function getTemplate() {
   if (templateCache) return templateCache;
   const resp = await fetch('avs_template.html');
+  if (!resp.ok) {
+    throw new Error(`Template load failed (${resp.status} ${resp.statusText})`);
+  }
   templateCache = await resp.text();
   return templateCache;
 }
@@ -46,8 +46,10 @@ btnGenerate.addEventListener('click', async () => {
       setStatus(`PDF saved: ${result.path} (${sizeKb} KB)`, 'success');
       btnPrint.disabled = false;
       btnOpen.disabled = false;
-    } else {
+    } else if (result.reason === 'cancelled') {
       setStatus('PDF generation cancelled.', 'error');
+    } else {
+      setStatus(`Error: ${result.error || 'PDF generation failed'}`, 'error');
     }
   } catch (err) {
     setStatus(`Error: ${err.message}`, 'error');
@@ -56,8 +58,10 @@ btnGenerate.addEventListener('click', async () => {
   }
 });
 
-btnOpen.addEventListener('click', () => {
-  if (lastPdfPath) window.api.openFile(lastPdfPath);
+btnOpen.addEventListener('click', async () => {
+  if (!lastPdfPath) return;
+  const openErr = await window.api.openFile(lastPdfPath);
+  if (openErr) setStatus(`Could not open file: ${openErr}`, 'error');
 });
 
 btnPrint.addEventListener('click', async () => {

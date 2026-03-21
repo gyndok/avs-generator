@@ -1,9 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
 let printWindow;
+
+const DEFAULT_LP_PRINTER = 'HP_Color_LaserJet_Pro_M453_4';
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -22,34 +25,42 @@ function createWindow() {
 app.whenReady().then(createWindow);
 app.on('window-all-closed', () => app.quit());
 
+function closePrintWindow() {
+  if (printWindow && !printWindow.isDestroyed()) {
+    printWindow.close();
+  }
+  printWindow = null;
+}
+
 // Generate PDF from filled HTML
 ipcMain.handle('generate-pdf', async (_event, filledHtml, patientName) => {
-  // Create a hidden window to render the AVS HTML
+  closePrintWindow();
+
   printWindow = new BrowserWindow({
-    width: 816,  // 8.5in at 96dpi
+    width: 816, // 8.5in at 96dpi
     height: 1056, // 11in at 96dpi
     show: false,
     webPreferences: { contextIsolation: true },
   });
 
-  // Write filled HTML to a temp file so CSS/fonts load properly
   const tmpPath = path.join(app.getPath('temp'), 'avs_preview.html');
-  fs.writeFileSync(tmpPath, filledHtml, 'utf-8');
-  await printWindow.loadFile(tmpPath);
+  let pdfBuffer;
 
-  // Wait for fonts/images to load
-  await new Promise(r => setTimeout(r, 1500));
+  try {
+    fs.writeFileSync(tmpPath, filledHtml, 'utf-8');
+    await printWindow.loadFile(tmpPath);
+    await new Promise(r => setTimeout(r, 1500));
+    pdfBuffer = await printWindow.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'Letter',
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    });
+  } catch (err) {
+    return { success: false, error: err.message || String(err) };
+  } finally {
+    closePrintWindow();
+  }
 
-  const pdfBuffer = await printWindow.webContents.printToPDF({
-    printBackground: true,
-    pageSize: 'Letter',
-    margins: { top: 0, bottom: 0, left: 0, right: 0 },
-  });
-
-  printWindow.close();
-  printWindow = null;
-
-  // Ask user where to save
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const safeName = (patientName || 'Patient').replace(/[^a-zA-Z0-9]/g, '_');
   const defaultName = `AVS_${safeName}_${timestamp}.pdf`;
@@ -65,20 +76,26 @@ ipcMain.handle('generate-pdf', async (_event, filledHtml, patientName) => {
 
   if (!filePath) return { success: false, reason: 'cancelled' };
 
-  fs.writeFileSync(filePath, pdfBuffer);
+  try {
+    fs.writeFileSync(filePath, pdfBuffer);
+  } catch (err) {
+    return { success: false, error: err.message || String(err) };
+  }
+
   return { success: true, path: filePath, size: pdfBuffer.length };
 });
 
-// Open PDF after save
 ipcMain.handle('open-file', async (_event, filePath) => {
-  shell.openPath(filePath);
+  const err = await shell.openPath(filePath);
+  return err || null;
 });
 
-// Print PDF
 ipcMain.handle('print-pdf', async (_event, filePath) => {
-  const { execSync } = require('child_process');
   try {
-    execSync(`lp -d HP_Color_LaserJet_Pro_M453_4 "${filePath}"`);
+    execFileSync('lp', ['-d', DEFAULT_LP_PRINTER, filePath], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };

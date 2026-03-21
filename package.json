@@ -9,6 +9,7 @@
     "build": "electron-builder --mac --arm64"
   },
   "build": {
+    "publish": null,
     "appId": "com.wscl.avs-generator",
     "productName": "AVS Generator",
     "mac": {

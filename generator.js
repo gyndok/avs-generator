@@ -73,7 +73,7 @@ function extractStats(letter, measurements) {
   m = letter.match(/(?:lost|loss of)\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
   if (m) stats.lbs_lost = m[1];
 
-  m = letter.match(/(\d+(?:\.\d+)?)\s*%\s*of (?:your )?(?:the )?(?:way|starting|body)/i);
+  m = letter.match(/(\d+(?:\.\d+)?)\s*%\s*of (?:your )?(?:the )?(?:starting|body)(?:\s+weight)?/i);
   if (m) stats.pct_lost = m[1];
 
   m = letter.match(/goal (?:weight )?(?:is |of )?(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
@@ -142,7 +142,112 @@ function parseLetterSections(letter) {
     while (sections[k].length && !sections[k][0].trim()) sections[k].shift();
     while (sections[k].length && !sections[k][sections[k].length - 1].trim()) sections[k].pop();
   }
-  return sections;
+  return enrichSectionsFromNarrative(letter, sections);
+}
+
+function appendUniqueLine(target, line) {
+  const trimmed = line.trim();
+  if (!trimmed) return;
+  if (!target.includes(trimmed)) target.push(trimmed);
+}
+
+function normalizeQuotedGoal(line, kind) {
+  const quoteMatch = line.match(/smart goal for (?:nutrition|exercise)\s*:\s*["“](.+?)["”]\s*$/i);
+  if (quoteMatch) return quoteMatch[1].trim();
+
+  const afterColon = line.match(/smart goal for (?:nutrition|exercise)\s*:\s*(.+)$/i);
+  if (afterColon) return afterColon[1].trim().replace(/^["“]|["”]$/g, '');
+
+  if (kind === 'nutrition' && /protein/i.test(line) && /next 4 weeks/i.test(line)) {
+    return line.trim();
+  }
+  if (kind === 'exercise' && /(gym|walk|strength training)/i.test(line) && /next 4 weeks/i.test(line)) {
+    return line.trim();
+  }
+  return line.trim();
+}
+
+function classifyNarrativeLine(line, sections) {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+
+  if (/^here is your clear plan for the next month\.?$/i.test(trimmed)) {
+    return true;
+  }
+
+  if (/^(frequency|intensity|time|type|enjoyment):/i.test(trimmed)) {
+    appendUniqueLine(sections.fitte, trimmed);
+    return true;
+  }
+
+  if (/exercise prescription is:?$/i.test(trimmed)) {
+    return true;
+  }
+
+  if (/your medication is\b/i.test(trimmed)) {
+    appendUniqueLine(sections.medication, trimmed.replace(/[. ]+$/g, '') + '.');
+    return true;
+  }
+
+  if (/smart goal for nutrition/i.test(trimmed)) {
+    appendUniqueLine(sections.nutrition_smart, normalizeQuotedGoal(trimmed, 'nutrition'));
+    return true;
+  }
+
+  if (/smart goal for exercise/i.test(trimmed)) {
+    appendUniqueLine(sections.exercise_smart, normalizeQuotedGoal(trimmed, 'exercise'));
+    return true;
+  }
+
+  if (/(daily multivitamin|vegetables|fruits|beans|smaller meals|greasy foods)/i.test(trimmed)) {
+    appendUniqueLine(sections.nutrition_guide, trimmed);
+    return true;
+  }
+
+  if (/(your labs showed|recheck this|cholesterol|next appointment)/i.test(trimmed)) {
+    appendUniqueLine(sections.next_steps, trimmed.replace(/[. ]+$/g, '') + '.');
+    return true;
+  }
+
+  return false;
+}
+
+function enrichSectionsFromNarrative(letter, sections) {
+  const narrativeLines = letter
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const inferred = {
+    preamble: [],
+    nutrition_smart: [...sections.nutrition_smart],
+    exercise_smart: [...sections.exercise_smart],
+    medication: [...sections.medication],
+    fitte: [...sections.fitte],
+    nutrition_guide: [...sections.nutrition_guide],
+    next_steps: [...sections.next_steps],
+    lifestyle: [...sections.lifestyle],
+  };
+
+  for (const line of sections.preamble) {
+    const consumed = classifyNarrativeLine(line, inferred);
+    if (!consumed) appendUniqueLine(inferred.preamble, line);
+  }
+
+  // If the letter was a single wrapped block, do another pass sentence-by-sentence.
+  if (!inferred.medication.length || !inferred.nutrition_smart.length || !inferred.exercise_smart.length || !inferred.next_steps.length) {
+    const sentences = letter
+      .replace(/\s+/g, ' ')
+      .split(/(?<=[.?!])\s+(?=[A-Z"“])/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    for (const sentence of sentences) {
+      classifyNarrativeLine(sentence, inferred);
+    }
+  }
+
+  return inferred;
 }
 
 // ── HTML renderers ──
