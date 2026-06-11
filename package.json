@@ -4,8 +4,11 @@
   "description": "After Visit Summary PDF Generator for Weight Management",
   "main": "main.js",
   "author": "Geffrey H. Klein, MD",
+  "license": "UNLICENSED",
+  "private": true,
   "scripts": {
     "start": "electron .",
+    "test": "node --test",
     "build": "electron-builder --mac --arm64"
   },
   "build": {

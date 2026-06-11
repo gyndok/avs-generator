@@ -1,7 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
-const { execFileSync } = require('child_process');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const path = require('path');
 const fs = require('fs');
+
+const execFileAsync = promisify(execFile);
 
 let mainWindow;
 let printWindow;
@@ -49,7 +52,6 @@ ipcMain.handle('generate-pdf', async (_event, filledHtml, patientName) => {
   try {
     fs.writeFileSync(tmpPath, filledHtml, 'utf-8');
     await printWindow.loadFile(tmpPath);
-    await new Promise(r => setTimeout(r, 1500));
     pdfBuffer = await printWindow.webContents.printToPDF({
       printBackground: true,
       pageSize: 'Letter',
@@ -59,6 +61,8 @@ ipcMain.handle('generate-pdf', async (_event, filledHtml, patientName) => {
     return { success: false, error: err.message || String(err) };
   } finally {
     closePrintWindow();
+    // The filled HTML contains PHI — don't leave it in the temp dir.
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -92,12 +96,16 @@ ipcMain.handle('open-file', async (_event, filePath) => {
 
 ipcMain.handle('print-pdf', async (_event, filePath) => {
   try {
-    execFileSync('lp', ['-d', DEFAULT_LP_PRINTER, filePath], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
+    await execFileAsync('lp', ['-d', DEFAULT_LP_PRINTER, filePath]);
+    return { success: true, printer: DEFAULT_LP_PRINTER };
+  } catch (_) {
+    // Named queue unavailable (different machine / renamed printer) — fall
+    // back to the system default printer.
+    try {
+      await execFileAsync('lp', [filePath]);
+      return { success: true, printer: 'system default' };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   }
 });

@@ -1,6 +1,8 @@
 // ── AVS Generator: parsing + HTML rendering (ported from generate_avs.py) ──
 
-const QR_API_URL = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://g.page/r/CR1ccgPImkkOEBE/review';
+// QR code for https://g.page/r/CR1ccgPImkkOEBE/review, embedded so PDFs
+// render identically offline (no per-generation call to api.qrserver.com).
+const QR_IMG_SRC = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQMAAABKLAcXAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABQElEQVQ4jZXUMa6DMAwGYEcd2JILIHINBqRcKd06NWzd6JUiMXCNoF4AtgworkNVPXV4JnjiYyDOnxiAn3KIwisxJY0YWFmo1Lg0raxB8LriQ2A/e1ub9aTU+EQPJYLOCn8/FHUmO8Bp+PZZKNq77Ow8Dd8k/tVeFqflL9QiOXzg5hKI1yR5yUu/epgRMVJnnESoxIipGi6RViiXe/V0DrSX2kheiu7E2OsooVp4Sd3LzglcP30WSwSnvKKTBrMAr+22bk54C608o2uoJNjQqlc+Ck5uu6m82BMj3SVO182t46KRbk/+SrnCjdJFb7WXvOwFSU2rMOZpZERFeSIOYE6JHijdZIY6p8uJZoVeAdyh/UxOoWg2Kd1ENyXmvR8JNCaoMBzKLDrSvCc4of2fRemqfcY45Xk3fQNi76xcP/UGQilFkhNdYgkAAAAASUVORK5CYII=';
 
 function esc(s) {
   return String(s)
@@ -272,6 +274,7 @@ function renderMedItems(lines) {
 }
 
 function renderFitteTable(lines) {
+  if (!lines.some(l => l.trim())) return '';
   const rows = lines.filter(l => l.trim()).map(line => {
     const m = line.trim().match(/^([^:]+):\s*(.+)$/);
     if (m) return `<tr><td>${esc(m[1].trim())}</td><td>${esc(m[2].trim())}</td></tr>`;
@@ -281,6 +284,7 @@ function renderFitteTable(lines) {
 }
 
 function renderNutrList(lines) {
+  if (!lines.some(l => l.trim())) return '';
   const items = lines.filter(l => l.trim()).map(line => {
     const clean = line.trim().replace(/^\d+[.)]\s*/, '');
     return `<li>${esc(clean)}</li>`;
@@ -298,12 +302,21 @@ function renderNextSteps(lines) {
 }
 
 // ── SVG chart ──
-function buildSvgChart(measurements, goalWeight) {
+function buildSvgChart(measurements, goalWeight, startWeight) {
+  // The letter's starting weight (pre-medication intake) often predates the
+  // first weigh-in row — anchor the chart there so progress isn't understated.
+  const startW = parseFloat(startWeight);
+  if (!isNaN(startW) && measurements.length && parseFloat(measurements[0].weight) !== startW) {
+    measurements = [{ date: 'Start', weight: String(startWeight) }, ...measurements];
+  }
   if (!measurements.length) return '<p style="font-size:7pt;color:#9ca3af;">No chart data.</p>';
   const weights = measurements.map(r => parseFloat(r.weight));
   if (weights.some(isNaN)) return '<p style="font-size:7pt;color:#9ca3af;">Could not parse weights.</p>';
   const dates = measurements.map(r => r.date);
-  const goal = parseFloat(goalWeight) || (Math.min(...weights) - 5);
+  const goalNum = parseFloat(goalWeight);
+  const hasGoal = !isNaN(goalNum) && goalNum > 0;
+  // Without a real goal, still pad the scale below the lowest weight, but draw no goal line.
+  const goal = hasGoal ? goalNum : Math.min(...weights) - 5;
   const allVals = [...weights, goal];
   let minW = Math.min(...allVals) - 5;
   let maxW = Math.max(...allVals) + 5;
@@ -360,8 +373,8 @@ function buildSvgChart(measurements, goalWeight) {
   <line x1="${PL}" y1="${PT+CH}" x2="${VW-PR}" y2="${PT+CH}" stroke="#d1d5db" stroke-width="1"/>
   <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+CH}" stroke="#d1d5db" stroke-width="1"/>
   <text x="10" y="${PT + CH/2}" text-anchor="middle" font-size="6" fill="#9ca3af" transform="rotate(-90,10,${(PT + CH/2).toFixed(1)})">Weight (lbs)</text>
-  <line x1="${PL}" y1="${goalY.toFixed(1)}" x2="${VW-PR}" y2="${goalY.toFixed(1)}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="${VW-PR+2}" y="${(goalY+4).toFixed(1)}" font-size="6" fill="#b45309" font-weight="600">Goal</text>
+  ${hasGoal ? `<line x1="${PL}" y1="${goalY.toFixed(1)}" x2="${VW-PR}" y2="${goalY.toFixed(1)}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="${VW-PR+2}" y="${(goalY+4).toFixed(1)}" font-size="6" fill="#b45309" font-weight="600">Goal</text>` : ''}
   <polygon points="${polyPts}" fill="url(#lineGrad)"/>
   <polyline points="${pts}" fill="none" stroke="#059669" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
   ${dots}
@@ -381,15 +394,22 @@ function buildMeasurementsTable(measurements) {
   return `<table><thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th>Hip</th><th>BMI</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
 }
 
+/** d is start − current: positive means the measurement decreased. */
+function formatInchDelta(d) {
+  if (d === 0) return 'no change';
+  const sign = d > 0 ? '−' : '+';
+  return `${sign}${Math.abs(d).toFixed(2)}"`;
+}
+
 function buildMeasurementsNote(stats) {
   const parts = [];
   if (stats.start_waist && stats.current_waist) {
     const d = parseFloat(stats.start_waist) - parseFloat(stats.current_waist);
-    if (!isNaN(d)) parts.push(`<strong>📏 Waist:</strong> ${stats.start_waist}" → ${stats.current_waist}" (+${Math.abs(d).toFixed(2)}")<br>`);
+    if (!isNaN(d)) parts.push(`<strong>📏 Waist:</strong> ${esc(stats.start_waist)}" → ${esc(stats.current_waist)}" (${formatInchDelta(d)})<br>`);
   }
   if (stats.start_hip && stats.current_hip) {
     const d = parseFloat(stats.start_hip) - parseFloat(stats.current_hip);
-    if (!isNaN(d)) parts.push(`<strong>📏 Hips:</strong> ${stats.start_hip}" → ${stats.current_hip}" (+${Math.abs(d).toFixed(2)}")`);
+    if (!isNaN(d)) parts.push(`<strong>📏 Hips:</strong> ${esc(stats.start_hip)}" → ${esc(stats.current_hip)}" (${formatInchDelta(d)})`);
   }
   return parts.length ? parts.join('\n') : 'Body composition changes tracked above.';
 }
@@ -467,9 +487,14 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
     visitDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
   }
 
-  const svg = buildSvgChart(measurements, stats.goal_weight);
+  const svg = buildSvgChart(measurements, stats.goal_weight, stats.start_weight);
   const table = buildMeasurementsTable(measurements);
   const measNote = buildMeasurementsNote(stats);
+
+  const goalNum = parseFloat(stats.goal_weight);
+  const chartGoalLegend = !isNaN(goalNum) && goalNum > 0
+    ? `- - Goal (${esc(stats.goal_weight)} lbs)`
+    : '';
 
   const replacements = {
     '{{HERO_EMOJI}}': hero.emoji,
@@ -491,7 +516,8 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
     '{{FITTE_TABLE}}': fitteTable,
     '{{NUTRITION_GUIDELINES}}': nutritionGuide,
     '{{NEXT_STEPS}}': nextSteps,
-    '{{QR_API_URL}}': QR_API_URL,
+    '{{CHART_GOAL_LEGEND}}': chartGoalLegend,
+    '{{QR_IMG_SRC}}': QR_IMG_SRC,
   };
 
   let result = templateHtml;
@@ -499,4 +525,14 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
     result = result.split(k).join(v);
   }
   return result;
+}
+
+// Loaded via <script> in the renderer; exported here so node:test can import it.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    esc, parseMeasurements, splitInput, extractStats, parseLetterSections,
+    renderGoalItems, renderMedItems, renderFitteTable, renderNutrList,
+    renderNextSteps, buildSvgChart, buildMeasurementsTable,
+    buildMeasurementsNote, buildHero, generateFilledHtml,
+  };
 }
