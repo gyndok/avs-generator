@@ -360,9 +360,15 @@
     margin-bottom: 4px;
   }
 
+  .card-purple {
+    background: var(--purple-soft);
+    border-color: var(--purple-border);
+  }
+
   .card-green .card-title { color: #267f59; }
   .card-blue .card-title { color: #2d69d2; }
   .card-amber .card-title { color: #be7a07; }
+  .card-purple .card-title { color: #7a4fc0; }
 
   .dot {
     width: 8px;
@@ -374,6 +380,7 @@
   .card-green .dot { background: var(--green); }
   .card-blue .dot { background: var(--blue); }
   .card-amber .dot { background: var(--amber); }
+  .card-purple .dot { background: var(--purple); }
 
   .subheading {
     font-size: 6.6pt;
@@ -615,6 +622,7 @@
           <div class="card-title"><span class="dot"></span>Next Steps</div>
           {{NEXT_STEPS}}
         </div>
+        {{LIFESTYLE_CARD}}
       </div>
     </div>
 

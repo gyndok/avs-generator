@@ -63,28 +63,42 @@ function extractStats(letter, measurements) {
   const stats = {
     start_weight: '', current_weight: '', lbs_lost: '', pct_lost: '',
     goal_weight: '', start_waist: '', current_waist: '', start_hip: '', current_hip: '',
+    start_date: '',
   };
   let m;
 
-  m = letter.match(/started at (\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
+  m = letter.match(/(?:started at|began at)\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i)
+   || letter.match(/starting\s+weight:?\s*(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
   if (m) stats.start_weight = m[1];
 
-  m = letter.match(/(?:today you(?:'re| are)|now (?:weigh|at))\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
+  // e.g. "Starting Weight: 210.5 lbs at BMI: 34.89 (2/25/2026)" or "began ... on 2/25/2026"
+  m = letter.match(/starting\s+weight[^\n(]*\((\d{1,2}\/\d{1,2}\/\d{2,4})\)/i)
+   || letter.match(/(?:started|began)[^.\n]*?\bon\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  if (m) stats.start_date = m[1];
+
+  m = letter.match(/(?:today you(?:'re| are)|now (?:weigh|at))\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i)
+   || letter.match(/(?:are|is)\s+now\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i)
+   || letter.match(/current\s+weight:?\s*(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
   if (m) stats.current_weight = m[1];
 
-  m = letter.match(/(?:lost|loss of)\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
+  m = letter.match(/(?:lost|loss of)\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i)
+   || letter.match(/down\s+(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
   if (m) stats.lbs_lost = m[1];
 
-  m = letter.match(/(\d+(?:\.\d+)?)\s*%\s*of (?:your )?(?:the )?(?:starting|body)(?:\s+weight)?/i);
+  m = letter.match(/(\d+(?:\.\d+)?)\s*%\s*of (?:your )?(?:the )?(?:starting|body)(?:\s+weight)?/i)
+   || letter.match(/(\d+(?:\.\d+)?)\s*%\s*weight\s+loss/i);
   if (m) stats.pct_lost = m[1];
 
-  m = letter.match(/goal (?:weight )?(?:is |of )?(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
+  m = letter.match(/goal (?:weight )?(?:is |of )?(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i)
+   || letter.match(/target\s+weight:?\s*(\d+(?:\.\d+)?)\s*(?:pounds?|lbs)/i);
   if (m) stats.goal_weight = m[1];
 
-  m = letter.match(/waist\s+(?:has )?(?:decreased|went|dropped|changed)\s+from\s+(\d+(?:\.\d+)?)\s*(?:inches?|in)\s+to\s+(\d+(?:\.\d+)?)\s*(?:inches?|in)/i);
+  // Allow unit-less first number and looser verbs: "waist has decreased from 39
+  // inches to 37.5 inches", "hips from 48 to 46 inches".
+  m = letter.match(/waist[^.\n]*?from\s+(\d+(?:\.\d+)?)\s*(?:inches?|in\b)?\s+to\s+(\d+(?:\.\d+)?)\s*(?:inches?|in\b)?/i);
   if (m) { stats.start_waist = m[1]; stats.current_waist = m[2]; }
 
-  m = letter.match(/hips?\s+(?:has |have )?(?:decreased|went|dropped|changed)\s+from\s+(\d+(?:\.\d+)?)\s*(?:inches?|in)\s+to\s+(\d+(?:\.\d+)?)\s*(?:inches?|in)/i);
+  m = letter.match(/hips?[^.\n]*?from\s+(\d+(?:\.\d+)?)\s*(?:inches?|in\b)?\s+to\s+(\d+(?:\.\d+)?)\s*(?:inches?|in\b)?/i);
   if (m) { stats.start_hip = m[1]; stats.current_hip = m[2]; }
 
   // Fall back to measurements
@@ -111,15 +125,21 @@ function extractStats(letter, measurements) {
 
 // ── Parse letter sections ──
 const SECTION_PATTERNS = [
-  ['nutrition_smart', /^(?:smart\s+goal\s*[-–—]\s*nutrition|nutrition\s+smart\s+goal|smart\s+nutrition\s+goal)/i],
-  ['exercise_smart',  /^(?:smart\s+goal\s*[-–—]\s*exercise|exercise\s+smart\s+goal|smart\s+exercise\s+goal)/i],
+  ['nutrition_smart', /^(?:smart\s+goal\s*[-–—]\s*nutrition|nutrition\s+smart\s+goal|smart\s+nutrition\s+goal|nutrition\s+goal\s*\(smart\))/i],
+  ['exercise_smart',  /^(?:smart\s+goal\s*[-–—]\s*exercise|exercise\s+smart\s+goal|smart\s+exercise\s+goal|exercise\s+goal\s*\(smart\))/i],
   ['medication',      /^medication/i],
   ['fitte',           /^(?:exercise\s+prescription|fitte)/i],
-  ['nutrition_guide', /^nutrition\s+(?:guidelines?|goals?)/i],
+  ['nutrition_guide', /^nutrition\s+(?:guidelines?|guidance|goals?)/i],
   ['next_steps',      /^next\s+steps?/i],
+  ['next_steps',      /^follow[\s-]?up\b/i],
   ['lifestyle',       /^lifestyle/i],
   ['_action_plan',    /^action\s+plan/i],
 ];
+
+// Summary-stat lines often pasted between the letter and the weigh-in rows.
+// extractStats reads them from the full letter text, but they must not render
+// as section content (e.g. as numbered Next Steps).
+const STAT_LINE_RE = /^(?:starting\s+weight|current\s+weight|target\s+weight|goal\s+weight|pounds\s+to\s+lose|estimated\s+time\s+to\s+goal|last\s+weigh[\s-]?in|down\s+\d+(?:\.\d+)?\s*(?:lbs|pounds)|\d+(?:\.\d+)?\s*%\s*weight\s+loss)/i;
 
 function parseLetterSections(letter) {
   const sections = { preamble: [] };
@@ -131,6 +151,7 @@ function parseLetterSections(letter) {
   for (const line of letter.split('\n')) {
     let matched = null;
     const trimmed = line.trim();
+    if (STAT_LINE_RE.test(trimmed)) continue;
     for (const [key, pat] of SECTION_PATTERNS) {
       if (pat.test(trimmed)) { matched = key; break; }
     }
@@ -253,9 +274,14 @@ function enrichSectionsFromNarrative(letter, sections) {
 }
 
 // ── HTML renderers ──
+function stripBullet(line) {
+  return line.trim().replace(/^[-–•*]\s*/, '');
+}
+
 function renderGoalItems(lines) {
   const icons = { specific: '🎯', measurable: '📏', achievable: '✅', realistic: '💡', 'time-related': '⏰', time: '⏰' };
-  return lines.filter(l => l.trim()).map(line => {
+  return lines.filter(l => l.trim()).map(rawLine => {
+    const line = stripBullet(rawLine);
     const m = line.trim().match(/^([^:]+):\s*(.+)$/);
     if (m) {
       const icon = icons[m[1].trim().toLowerCase()] || '•';
@@ -266,19 +292,21 @@ function renderGoalItems(lines) {
 }
 
 function renderMedItems(lines) {
-  const warn = /\b(call if|report|warning|do not|avoid|severe|emergency|planning pregnancy)\b/i;
-  return lines.filter(l => l.trim()).map(line => {
-    if (warn.test(line)) return `<div class="warn-row">⚠️ ${esc(line.trim())}</div>`;
-    return `<div class="med-item"><span class="med-icon">💊</span><div>${esc(line.trim())}</div></div>`;
+  const warn = /\b(call if|report|warning|do not|avoid|severe|emergency|planning pregnancy|stop|hold)\b/i;
+  return lines.filter(l => l.trim()).map(rawLine => {
+    const line = stripBullet(rawLine);
+    if (warn.test(line)) return `<div class="warn-row">⚠️ ${esc(line)}</div>`;
+    return `<div class="med-item"><span class="med-icon">💊</span><div>${esc(line)}</div></div>`;
   }).join('\n');
 }
 
 function renderFitteTable(lines) {
   if (!lines.some(l => l.trim())) return '';
-  const rows = lines.filter(l => l.trim()).map(line => {
-    const m = line.trim().match(/^([^:]+):\s*(.+)$/);
+  const rows = lines.filter(l => l.trim()).map(rawLine => {
+    const line = stripBullet(rawLine);
+    const m = line.match(/^([^:]+):\s*(.+)$/);
     if (m) return `<tr><td>${esc(m[1].trim())}</td><td>${esc(m[2].trim())}</td></tr>`;
-    return `<tr><td colspan="2">${esc(line.trim())}</td></tr>`;
+    return `<tr><td colspan="2">${esc(line)}</td></tr>`;
   }).join('\n');
   return `<table class="fitte-table"><tbody>${rows}</tbody></table>`;
 }
@@ -286,7 +314,7 @@ function renderFitteTable(lines) {
 function renderNutrList(lines) {
   if (!lines.some(l => l.trim())) return '';
   const items = lines.filter(l => l.trim()).map(line => {
-    const clean = line.trim().replace(/^\d+[.)]\s*/, '');
+    const clean = stripBullet(line).replace(/^\d+[.)]\s*/, '');
     return `<li>${esc(clean)}</li>`;
   }).join('');
   return `<ul class="nutr-list">${items}</ul>`;
@@ -302,12 +330,12 @@ function renderNextSteps(lines) {
 }
 
 // ── SVG chart ──
-function buildSvgChart(measurements, goalWeight, startWeight) {
+function buildSvgChart(measurements, goalWeight, startWeight, startDate) {
   // The letter's starting weight (pre-medication intake) often predates the
   // first weigh-in row — anchor the chart there so progress isn't understated.
   const startW = parseFloat(startWeight);
   if (!isNaN(startW) && measurements.length && parseFloat(measurements[0].weight) !== startW) {
-    measurements = [{ date: 'Start', weight: String(startWeight) }, ...measurements];
+    measurements = [{ date: startDate || 'Start', weight: String(startWeight) }, ...measurements];
   }
   if (!measurements.length) return '<p style="font-size:7pt;color:#9ca3af;">No chart data.</p>';
   const weights = measurements.map(r => parseFloat(r.weight));
@@ -487,9 +515,15 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
     visitDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
   }
 
-  const svg = buildSvgChart(measurements, stats.goal_weight, stats.start_weight);
+  const svg = buildSvgChart(measurements, stats.goal_weight, stats.start_weight, stats.start_date);
   const table = buildMeasurementsTable(measurements);
   const measNote = buildMeasurementsNote(stats);
+
+  // Lifestyle renders as a whole card so nothing shows when the letter has none.
+  const lifestyleList = renderNutrList(sections.lifestyle || []);
+  const lifestyleCard = lifestyleList
+    ? `<div class="card card-purple"><div class="card-title"><span class="dot"></span>Lifestyle</div>${lifestyleList}</div>`
+    : '';
 
   const goalNum = parseFloat(stats.goal_weight);
   const chartGoalLegend = !isNaN(goalNum) && goalNum > 0
@@ -516,6 +550,7 @@ function generateFilledHtml(rawText, patientName, templateHtml) {
     '{{FITTE_TABLE}}': fitteTable,
     '{{NUTRITION_GUIDELINES}}': nutritionGuide,
     '{{NEXT_STEPS}}': nextSteps,
+    '{{LIFESTYLE_CARD}}': lifestyleCard,
     '{{CHART_GOAL_LEGEND}}': chartGoalLegend,
     '{{QR_IMG_SRC}}': QR_IMG_SRC,
   };

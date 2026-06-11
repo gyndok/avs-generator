@@ -108,6 +108,52 @@ test('generateFilledHtml fills every placeholder and embeds the QR inline', () =
   assert.match(html, /⚠️ Call if you have severe abdominal pain/);
 });
 
+// ── Rich letter format (headers like "Nutrition goal (SMART):", trailing stats block) ──
+const RICH = fs.readFileSync(path.join(__dirname, 'fixtures', 'rich-letter.txt'), 'utf8');
+
+test('rich format: stats come from the letter, not the first weigh-in', () => {
+  const { letter } = splitInput(RICH);
+  const stats = extractStats(letter, parseMeasurements(splitInput(RICH).measText));
+  assert.equal(stats.start_weight, '210.5');
+  assert.equal(stats.start_date, '2/25/2026');
+  assert.equal(stats.current_weight, '193.8');
+  assert.equal(stats.lbs_lost, '16.7');
+  assert.equal(stats.pct_lost, '7.9');
+  assert.equal(stats.goal_weight, '150');
+  assert.equal(stats.start_hip, '48');
+  assert.equal(stats.current_hip, '46');
+});
+
+test('rich format: sections route to the right cards', () => {
+  const html = generateFilledHtml(RICH, 'Jane', TEMPLATE);
+  // SMART goals found (no provider fallback)
+  assert.ok(!html.includes('See your provider for nutrition goals'));
+  assert.match(html, /100–110 grams of protein/);
+  // Nutrition guidance not swallowed by the FITTE table
+  assert.match(html, /1200–1500 calories/);
+  assert.match(html, /<td>Frequency<\/td>/);
+  // Lifestyle card renders
+  assert.match(html, /card-purple/);
+  assert.match(html, /Prioritize sleep and stress management/);
+  // Stats block does not leak into Next Steps
+  assert.ok(!html.includes('Estimated time to goal'));
+  assert.ok(!html.includes('Pounds to lose'));
+  assert.match(html, /Return in 4 weeks/);
+  // Med stop instruction gets the warning treatment
+  assert.match(html, /⚠️ Continue your current dosing until June 25/);
+  // Bullets stripped from rendered items
+  assert.ok(!/>\s*- (Eat|Walk|Continue|Aim)/.test(html));
+  // Chart anchors at the dated starting weight
+  assert.match(html, />2\/25</);
+  assert.match(html, />210\.5/);
+});
+
+test('rich format: lifestyle card absent when letter has no lifestyle section', () => {
+  const html = generateFilledHtml('Hello.\n' + SAMPLE_MEAS, 'Jane', TEMPLATE);
+  assert.ok(!html.includes('<div class="card card-purple">'));
+  assert.ok(!html.includes('{{LIFESTYLE_CARD}}'));
+});
+
 test('generateFilledHtml escapes hostile letter text', () => {
   const html = generateFilledHtml('<script>alert(1)</script>\n' + SAMPLE_MEAS, 'Jane', TEMPLATE);
   assert.ok(!html.includes('<script>alert(1)</script>'));
